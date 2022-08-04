@@ -4,24 +4,12 @@
 #include<pthread.h>
 #include<stdint.h>
 
-int **m1, **m2, **mm;
-int lins, cols, cores;
+double **m1, **m2, **mm;
+int cores;
+int lins1, cols1;
+int lins2, cols2;
 
-int **create_matrix(int lins, int cols){
-#ifdef DEBUG
-    printf("create_matrix\n");
-#endif
-    int **m;
-    m = (int **) malloc(lins*sizeof(int*));
-    for(int i=0;i<lins;i++){
-        m[i] = (int*) malloc(cols*sizeof(int));
-        for(int j=0;j<cols;j++)
-            m[i][j] = rand() % 5;
-    }
-    return m;
-}
-
-void destroy_matrix(int ***m, int n){
+void destroy_matrix(double ***m, int lins){
 #ifdef DEBUG
     printf("destroy_matrix\n");
 #endif
@@ -30,13 +18,13 @@ void destroy_matrix(int ***m, int n){
     free(*m);
 }
 
-void show(int **m, int n){
+void show(double **m, int lins, int cols){
 #ifdef DEBUG
     printf("show\n");
 #endif
     for(int i=0;i<lins;i++){
         for(int j=0;j<cols;j++)
-            printf("[%d]", m[i][j]);
+            printf("[%lf]", m[i][j]);
         printf("\n");
     }
     printf("\n");
@@ -45,50 +33,80 @@ void show(int **m, int n){
 void *multiply(void *args)
 {
     int64_t id = (int64_t) args;
-    int secao = n / cores;
+    int secao = lins1 / cores;
     int start = id * secao;
     int end = (id+1) * secao;
 
     for(int i=start;i<end;i++)
-        for(int j=0;j<n;j++){
-            mm[i][j] = 0;
-            for(int k=0;k<n;k++)
+        for(int j=start;j<end;j++){
+            mm[i][j] = 0.0;
+            for(int k=start;k<end;k++)
                 mm[i][j] += m1[i][k] * m2[k][j];
         }
 }
 
-void main(int argc, char **argv){
-    if(!(argc == 3)){
-        exit(1);
-    }
-    FILE *in = fopen("pthread.input", "r");
-    FILE *out = fopen("pthread.output", "w");
+int main(int argc, char **argv){
+    FILE *in = fopen("pthread_in.txt", "r");
+    FILE *out = fopen("pthread_out.txt", "w");
+#ifdef DEBUG
+    printf("%d\n", in == NULL);
+    printf("%d\n", out == NULL);
+#endif
     if(in == NULL || out == NULL)
         exit(1);
+#ifdef DEBUG
+    printf("read\n");
+#endif
     cores = 4;
     pthread_t *threads;
-    
-    srand(time(NULL));
+    int tests = 0;
 
-    m1 = create_matrix(lins, cols);
-    m2 = create_matrix(lins, cols);
-    mm = create_matrix(lins, cols); // may be wrong
+    fscanf(in, "%d", &tests);
+#ifdef DEBUG
+    printf("%d\n", tests);
+#endif
 
-    //show(m1, n);
-    //show(m2, n);
+    while(tests--){
+        fscanf(in, "%d %d", &lins1, &cols1);
+#ifdef DEBUG
+        printf("%d %d\n", lins1, cols1);
+#endif
+        for(int i=0;i<lins1;i++){
+            printf("%d\n", i);
+            for(int j=0;j<cols1;j++){
+                printf("%d", j);
+                fscanf(in, "%lf", &m1[i][j]);
+            }
+        }
 
-    threads = (pthread_t *) malloc(cores*sizeof(pthread_t));
+        fscanf(in, "%d %d", &lins2, &cols2);
+#ifdef DEBUG
+        printf("%d %d\n", lins2, cols2);
+#endif
+        for(int i=0;i<lins2;i++)
+            for(int j=0;j<cols2;j++)
+                fscanf(in, "%lf", &m2[i][j]);
+#ifdef DEBUG
 
-    for(int64_t i=0;i<cores;i++)
-        pthread_create(threads+i, NULL, multiply, (void *)i);
+        show(m1, lins1, cols1);
+        show(m2, lins1, cols2);
+#endif
+        threads = (pthread_t *) malloc(cores*sizeof(pthread_t));
 
-    for(int64_t i=0;i<cores;i++)
-        pthread_join(threads[i], NULL);
+        for(int64_t i=0;i<cores;i++)
+            pthread_create(threads+i, NULL, multiply, (void *)i);
 
-    //show(mm, n);
-    
-    destroy_matrix(&m1, n);
-    destroy_matrix(&m2, n);
-    destroy_matrix(&mm, n);
-    exit(0);
+        for(int64_t i=0;i<cores;i++)
+            pthread_join(threads[i], NULL);
+#ifdef DEBUG
+        show(mm, lins1, cols2);
+#endif
+        destroy_matrix(&m1, lins1);
+        destroy_matrix(&m2, lins2);
+        destroy_matrix(&mm, lins1);
+        free(threads);
+    }
+    fclose(in);
+    fclose(out);
+    return 0;
 }
