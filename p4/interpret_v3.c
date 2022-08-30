@@ -4,7 +4,7 @@
 #include<inttypes.h>
 
 FILE *in;
-int32_t v64[16] = {0};
+int16_t v64[16] = {0};
 uint32_t ic[16] = {0}; // instruction counter
 uint8_t code[128] = {0};
 
