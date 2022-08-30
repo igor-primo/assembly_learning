@@ -39,16 +39,21 @@ main:
     push rbp
     mov rbp, rsp
 
+    mov rax, [rsi+8]
+    mov [rip+aux1], rax
+    mov rax, [rsi+16]
+    mov [rip+aux2], rax
+
     # abrindo arquivos de entrada e saida
     lea rsi, [rip+r_mode]
-    lea rdi, [rip+rfn]
+    mov rdi, [rip+aux1]
     call fopen@plt
 
     # guardando ponteiro para o arquivo aberto
     mov [rip+input_f], rax
 
     lea rsi, [rip+w_mode]
-    lea rdi, [rip+wfn]
+    mov rdi, [rip+aux2]
     call fopen@plt
 
     # guardando ponteiro para o arquivo aberto
