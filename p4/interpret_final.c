@@ -8,14 +8,9 @@ FILE *in, *out;
 int32_t v64[16] = {0};
 uint32_t ic[16] = {0}; // instruction counter
 uint8_t code[128] = {0};
-uint8_t codex86[256] = {0};
-uint32_t reg_ht[16] = {0};
 
 int interpret(uint8_t *code, uint32_t n);
-void compile(uint8_t *code, int n);
-void pi_x86(uint8_t byte); // push into x86 code
 void see_v64();
-void reg_ht_populate();
 
 int main(int argc, char **argv){
     if(!(argc == 3))
@@ -28,7 +23,6 @@ int main(int argc, char **argv){
     while(fscanf(in, "%X", &byte) == 1)
         code[n++] = byte;
     interpret(code, n);
-    reg_ht_populate();
     see_v64();
     fclose(in);
     fclose(out);
@@ -256,8 +250,4 @@ void see_v64(){
         fprintf(out, "0%x:%"SCNu32"\n", i, ic[i]);
     for(int i=0;i<16;i++)
         fprintf(out, "R[%d]=0x%08x\n", i, v64[i]);
-}
-
-void reg_ht_populate(){
-    reg_ht[0x0] = 0xc0c7;
 }
